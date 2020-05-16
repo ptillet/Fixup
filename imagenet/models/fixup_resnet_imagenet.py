@@ -9,15 +9,21 @@ __all__ = ['FixupResNet', 'fixup_resnet18', 'fixup_resnet34', 'fixup_resnet50', 
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
-    block = 16
-    layout = torch.ones((out_planes // block, in_planes // block, 3, 3), dtype=torch.int64)
+    rho = 0.
+    probs = torch.Tensor([rho, 1-rho])
+    generator = torch.distributions.categorical.Categorical(probs)
+    block = min(in_planes, min(out_planes, 64))
+    layout = generator.sample((out_planes // block, in_planes // block, 3, 3))
     return torch_blocksparse.Conv2d(in_planes, out_planes, (3,3), layout, block, stride=(stride, stride), padding=(1,1), bias=False, order='CHWN')
 
 
 def conv1x1(in_planes, out_planes, stride=1):
     """1x1 convolution"""
-    block = 16
-    layout = torch.ones((out_planes // block, in_planes // block, 1, 1), dtype=torch.int64)
+    rho = 0.
+    probs = torch.Tensor([rho, 1-rho])
+    generator = torch.distributions.categorical.Categorical(probs)
+    block = min(in_planes, min(out_planes, 64))
+    layout = generator.sample((out_planes // block, in_planes // block, 1, 1))
     return torch_blocksparse.Conv2d(in_planes, out_planes, (1,1), layout, block, stride=(stride, stride), bias=False, order='CHWN')
 
 # def conv3x3(in_planes, out_planes, stride=1):
